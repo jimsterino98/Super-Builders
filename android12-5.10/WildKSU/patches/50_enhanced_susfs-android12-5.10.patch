@@ -37,8 +37,8 @@ diff -ruN '--exclude=.git' clean/drivers/input/input.c work-50/drivers/input/inp
  
 diff -ruN '--exclude=.git' clean/fs/Kconfig work-50/fs/Kconfig
 --- clean/fs/Kconfig	2026-03-05 12:29:58.897230110 +0100
-+++ work-50/fs/Kconfig	2026-03-05 13:09:00.921904200 +0100
-@@ -351,3 +351,33 @@
++++ work-50/fs/Kconfig	2026-03-05 14:01:19.962985235 +0100
+@@ -351,3 +351,41 @@
  	bool
  
  endmenu
@@ -72,6 +72,14 @@ diff -ruN '--exclude=.git' clean/fs/Kconfig work-50/fs/Kconfig
 +    help
 +      Auto-hides Android/data and Android/obb package directories
 +      from other apps via hash-table lookup at stat/open/readdir.
++
++config KSU_SUSFS_HARDENED
++    bool "Hardened SUSFS (upstream bug fixes)"
++    depends on KSU_SUSFS
++    default y
++    help
++      Fixes upstream SUSFS concurrency and error-handling bugs.
++      Disable to match exact upstream behavior.
 diff -ruN '--exclude=.git' clean/fs/Makefile work-50/fs/Makefile
 --- clean/fs/Makefile	2026-03-05 12:29:58.905230030 +0100
 +++ work-50/fs/Makefile	2026-03-05 12:35:34.884208380 +0100
@@ -837,7 +845,7 @@ diff -ruN '--exclude=.git' clean/fs/namespace.c work-50/fs/namespace.c
 +#endif
 diff -ruN '--exclude=.git' clean/fs/notify/fdinfo.c work-50/fs/notify/fdinfo.c
 --- clean/fs/notify/fdinfo.c	2026-03-05 12:29:59.041228663 +0100
-+++ work-50/fs/notify/fdinfo.c	2026-03-05 12:35:34.885630356 +0100
++++ work-50/fs/notify/fdinfo.c	2026-03-05 14:00:32.691465346 +0100
 @@ -12,6 +12,9 @@
  #include <linux/types.h>
  #include <linux/seq_file.h>
@@ -910,7 +918,7 @@ diff -ruN '--exclude=.git' clean/fs/notify/fdinfo.c work-50/fs/notify/fdinfo.c
 +				goto orig_flow;
 +			}
 +			dpath = d_path(&file->f_path, pathname, PAGE_SIZE);
-+			if (!dpath) {
++			if (IS_ERR(dpath)) {
 +				kfree(pathname);
 +				goto orig_flow;
 +			}
@@ -1129,7 +1137,7 @@ diff -ruN '--exclude=.git' clean/fs/proc/bootconfig.c work-50/fs/proc/bootconfig
  	return 0;
 diff -ruN '--exclude=.git' clean/fs/proc/fd.c work-50/fs/proc/fd.c
 --- clean/fs/proc/fd.c	2026-03-05 12:29:59.113743938 +0100
-+++ work-50/fs/proc/fd.c	2026-03-05 12:35:34.886471336 +0100
++++ work-50/fs/proc/fd.c	2026-03-05 14:00:44.091349563 +0100
 @@ -13,6 +13,9 @@
  #include <linux/fs.h>
  
@@ -1167,7 +1175,7 @@ diff -ruN '--exclude=.git' clean/fs/proc/fd.c work-50/fs/proc/fd.c
 +			goto orig_flow;
 +		}
 +		dpath = d_path(&file->f_path, pathname, PAGE_SIZE);
-+		if (!dpath) {
++		if (IS_ERR(dpath)) {
 +			kfree(pathname);
 +			goto orig_flow;
 +		}
@@ -1907,8 +1915,8 @@ diff -ruN '--exclude=.git' clean/fs/statfs.c work-50/fs/statfs.c
  
 diff -ruN '--exclude=.git' clean/fs/susfs.c work-50/fs/susfs.c
 --- clean/fs/susfs.c	1970-01-01 01:00:00.000000000 +0100
-+++ work-50/fs/susfs.c	2026-03-05 13:07:03.331051097 +0100
-@@ -0,0 +1,1557 @@
++++ work-50/fs/susfs.c	2026-03-05 14:01:06.471122264 +0100
+@@ -0,0 +1,1569 @@
 +#include <linux/version.h>
 +#include <linux/cred.h>
 +#include <linux/fs.h>
@@ -2566,7 +2574,11 @@ diff -ruN '--exclude=.git' clean/fs/susfs.c work-50/fs/susfs.c
 +
 +out_puth_put_path:
 +	path_put(&path);
++#ifdef CONFIG_KSU_SUSFS_HARDENED
++	return err;
++#else
 +	return 0;
++#endif
 +}
 +
 +void susfs_add_sus_kstat(void __user **user_info) {
@@ -2835,11 +2847,19 @@ diff -ruN '--exclude=.git' clean/fs/susfs.c work-50/fs/susfs.c
 +								new_entry->info.spoofed_blocks, info.spoofed_blocks, info.target_pathname);
 +				new_entry->info.spoofed_blocks = info.spoofed_blocks;
 +			}
++#ifdef CONFIG_KSU_SUSFS_HARDENED
++			spin_lock(&susfs_spin_lock_sus_kstat);
++			hash_del(&tmp_entry->node);
++			hash_add(SUS_KSTAT_HLIST, &new_entry->node, info.target_ino);
++			spin_unlock(&susfs_spin_lock_sus_kstat);
++			kfree(tmp_entry);
++#else
 +			hash_del(&tmp_entry->node);
 +			kfree(tmp_entry);
 +			spin_lock(&susfs_spin_lock_sus_kstat);
 +			hash_add(SUS_KSTAT_HLIST, &new_entry->node, info.target_ino);
 +			spin_unlock(&susfs_spin_lock_sus_kstat);
++#endif
 +			info.err = 0;
 +			goto out_copy_to_user;
 +		}
@@ -2971,8 +2991,8 @@ diff -ruN '--exclude=.git' clean/fs/susfs.c work-50/fs/susfs.c
 +	struct st_susfs_spoof_cmdline_or_bootconfig *info = (struct st_susfs_spoof_cmdline_or_bootconfig *)kzalloc(sizeof(struct st_susfs_spoof_cmdline_or_bootconfig), GFP_KERNEL);
 +	
 +	if (!info) {
-+		info->err = -ENOMEM;
-+		goto out_copy_to_user;
++		SUSFS_LOGE("CMD_SUSFS_SET_CMDLINE_OR_BOOTCONFIG -> kzalloc failed\n");
++		return;
 +	}
 +
 +	if (copy_from_user(info, (struct st_susfs_spoof_cmdline_or_bootconfig __user*)*user_info, sizeof(struct st_susfs_spoof_cmdline_or_bootconfig))) {
@@ -3179,8 +3199,8 @@ diff -ruN '--exclude=.git' clean/fs/susfs.c work-50/fs/susfs.c
 +	size_t copied_size = 0;
 +
 +	if (!info) {
-+		info->err = -ENOMEM;
-+		goto out_copy_to_user;
++		SUSFS_LOGE("CMD_SUSFS_SHOW_ENABLED_FEATURES -> kzalloc failed\n");
++		return;
 +	}
 +
 +	if (copy_from_user(info, (struct st_susfs_enabled_features __user*)*user_info, sizeof(struct st_susfs_enabled_features))) {
