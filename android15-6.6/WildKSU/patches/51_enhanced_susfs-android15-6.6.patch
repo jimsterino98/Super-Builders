@@ -65,13 +65,15 @@
  
  /* [Feb-1997 T. Schoebel-Theuer]
   * Fundamental changes in the pathname lookup mechanisms (namei)
-@@ -1616,6 +1622,8 @@
+@@ -1616,6 +1622,9 @@
  
  	/* Don't create child dentry for a dead directory. */
- 	if (unlikely(IS_DEADDIR(dir)))
-+			if (d_in_lookup(dentry))
-+				d_lookup_done(dentry);
+-	if (unlikely(IS_DEADDIR(dir)))
++	if (unlikely(IS_DEADDIR(dir))) {
++		if (d_in_lookup(dentry))
++			d_lookup_done(dentry);
  		return ERR_PTR(-ENOENT);
++	}
  
  	dentry = d_alloc(base, name);
 @@ -1684,7 +1692,9 @@
@@ -214,21 +216,6 @@
  	if (flags & ~(RENAME_NOREPLACE | RENAME_EXCHANGE | RENAME_WHITEOUT))
  		goto put_names;
  
-@@ -5318,6 +5356,9 @@
-  */
- int vfs_readlink(struct dentry *dentry, char __user *buffer, int buflen)
- {
-+		if (d_in_lookup(dentry)) {
-+			d_lookup_done(dentry);
-+		}
- 	struct inode *inode = d_inode(dentry);
- 	DEFINE_DELAYED_CALL(done);
- 	const char *link;
-@@ -5472,3 +5513,4 @@
- 	.get_link	= page_get_link,
- };
- EXPORT_SYMBOL(page_symlink_inode_operations);
-+	struct inode *inode;
 --- a/fs/namespace.c	2026-03-07 19:05:40.823358948 +0100
 +++ b/fs/namespace.c	2026-03-07 19:37:12.028343300 +0100
 @@ -43,10 +43,9 @@
