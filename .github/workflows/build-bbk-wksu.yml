@@ -225,11 +225,11 @@ jobs:
 
         LOCAL_MANIFEST="$GITHUB_WORKSPACE/manifests/bbk/${MANIFEST_FILE}"
         if [ -f "$LOCAL_MANIFEST" ]; then
-          repo init -u "https://github.com/${MANIFEST_REPO}.git" \
-            -b "refs/heads/${MANIFEST_BRANCH}" --depth=1 --no-clone-bundle --no-tags
           mkdir -p .repo/manifests
           cp "$LOCAL_MANIFEST" .repo/manifests/local.xml
-          repo init -m local.xml
+          repo init -u "https://github.com/${MANIFEST_REPO}.git" \
+            -b "refs/heads/${MANIFEST_BRANCH}" -m local.xml \
+            --depth=1 --no-clone-bundle --no-tags
         else
           repo init -u "https://github.com/${MANIFEST_REPO}.git" \
             -b "refs/heads/${MANIFEST_BRANCH}" \
