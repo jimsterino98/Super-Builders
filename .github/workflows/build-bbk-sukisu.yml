@@ -223,9 +223,18 @@ jobs:
         mkdir -p "$SYNC_DIR"
         cd "$SYNC_DIR"
 
-        repo init -u "https://github.com/${MANIFEST_REPO}.git" \
-          -b "refs/heads/${MANIFEST_BRANCH}" \
-          -m "${MANIFEST_FILE}" --depth=1
+        LOCAL_MANIFEST="$GITHUB_WORKSPACE/manifests/bbk/${MANIFEST_FILE}"
+        if [ -f "$LOCAL_MANIFEST" ]; then
+          repo init -u "https://github.com/${MANIFEST_REPO}.git" \
+            -b "refs/heads/${MANIFEST_BRANCH}" --depth=1 --no-clone-bundle --no-tags
+          mkdir -p .repo/manifests
+          cp "$LOCAL_MANIFEST" .repo/manifests/local.xml
+          repo init -m local.xml
+        else
+          repo init -u "https://github.com/${MANIFEST_REPO}.git" \
+            -b "refs/heads/${MANIFEST_BRANCH}" \
+            -m "${MANIFEST_FILE}" --depth=1
+        fi
 
         repo sync -c -j"$(nproc)" --no-tags --no-clone-bundle --force-sync --fail-fast
 
