@@ -187,9 +187,9 @@ index 7cb00fe68..fd8d787e7 100644
 +#ifdef CONFIG_ZEROMOUNT
 +#include <linux/zeromount.h>
 +#endif
- #if defined(CONFIG_KSU_SUSFS_SUS_KSTAT) || defined(CONFIG_KSU_SUSFS_SUS_MAP)
+ #if defined(CONFIG_KSU_SUSFS_SUS_KSTAT) || defined(CONFIG_KSU_SUSFS_SUS_MAP) || defined(CONFIG_KSU_SUSFS_OPEN_REDIRECT)
  #include <linux/susfs_def.h>
- #endif
+ #endif // #if defined(CONFIG_KSU_SUSFS_SUS_KSTAT) || defined(CONFIG_KSU_SUSFS_SUS_MAP) || defined(CONFIG_KSU_SUSFS_OPEN_REDIRECT)
 @@ -366,6 +369,9 @@ show_map_vma(struct seq_file *m, struct vm_area_struct *vma)
  #endif
  		dev = inode->i_sb->s_dev;
@@ -198,8 +198,8 @@ index 7cb00fe68..fd8d787e7 100644
 +		zeromount_spoof_mmap_metadata(inode, &dev, &ino);
 +#endif
  #ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
- bypass_orig_flow:
- #endif
+ 		susfs_sus_kstat_spoof_show_map_vma(inode, &dev, &ino);
+ #endif // #ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
 diff --git a/fs/readdir.c b/fs/readdir.c
 index e5a56fcfc..d0fca7da3 100644
 --- a/fs/readdir.c
@@ -428,9 +428,9 @@ index 9c699e632..c4a5678b8 100644
 +#endif
 +
 +
- #ifdef CONFIG_KSU_SUSFS_UNICODE_FILTER
- 	if (susfs_check_unicode_bypass(filename)) {
- 		return -ENOENT;
+ #ifdef CONFIG_KSU_SUSFS
+  if (likely(susfs_is_current_proc_umounted()) || !ksu_su_compat_enabled) {
+ 		goto orig_flow;
 diff --git a/fs/statfs.c b/fs/statfs.c
 index a21875ca3..093287941 100644
 --- a/fs/statfs.c
