@@ -448,14 +448,14 @@
  #include <linux/uaccess.h>
  #include <linux/pkeys.h>
 @@ -310,6 +313,9 @@
- #endif
+ #endif // #ifdef CONFIG_KSU_SUSFS_SUS_MAP
  		dev = inode->i_sb->s_dev;
  		ino = inode->i_ino;
 +#ifdef CONFIG_ZEROMOUNT
 +		zeromount_spoof_mmap_metadata(inode, &dev, &ino);
 +#endif
  #ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
- 		susfs_sus_kstat_spoof_show_map_vma(inode, &dev, &ino);
+ 		             susfs_sus_kstat_spoof_show_map_vma(inode, &dev, &ino);
  #endif // #ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
 --- a/fs/zeromount.c	2026-03-01 02:48:33.847739002 +0100
 +++ b/fs/zeromount.c	2026-03-01 02:42:39.836505791 +0100
