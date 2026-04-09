@@ -405,9 +405,9 @@
 +	}
 +#endif
 +
- #ifdef CONFIG_KSU_SUSFS
- 	if (likely(susfs_is_current_proc_umounted()) || !ksu_su_compat_enabled) {
- 		goto orig_flow;
+       	if (flags & ~(AT_SYMLINK_NOFOLLOW | AT_NO_AUTOMOUNT | AT_EMPTY_PATH |
+ 		                   AT_STATX_SYNC_TYPE))
+ 		             return -EINVAL;
 --- a/fs/statfs.c	2026-03-01 03:03:02.109565353 +0100
 +++ b/fs/statfs.c	2026-03-01 03:10:36.510976173 +0100
 @@ -14,6 +14,9 @@
