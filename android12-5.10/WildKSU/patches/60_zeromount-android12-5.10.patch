@@ -191,14 +191,14 @@ index 7cb00fe68..fd8d787e7 100644
  #include <linux/susfs_def.h>
  #endif // #if defined(CONFIG_KSU_SUSFS_SUS_KSTAT) || defined(CONFIG_KSU_SUSFS_SUS_MAP) || defined(CONFIG_KSU_SUSFS_OPEN_REDIRECT)
 @@ -366,6 +369,9 @@ show_map_vma(struct seq_file *m, struct vm_area_struct *vma)
- #endif
+ #endif // #ifdef CONFIG_KSU_SUSFS_SUS_MAP
  		dev = inode->i_sb->s_dev;
  		ino = inode->i_ino;
 +#ifdef CONFIG_ZEROMOUNT
 +		zeromount_spoof_mmap_metadata(inode, &dev, &ino);
 +#endif
  #ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
- 		susfs_sus_kstat_spoof_show_map_vma(inode, &dev, &ino);
+ 		             susfs_sus_kstat_spoof_show_map_vma(inode, &dev, &ino);
  #endif // #ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
 diff --git a/fs/readdir.c b/fs/readdir.c
 index e5a56fcfc..d0fca7da3 100644
