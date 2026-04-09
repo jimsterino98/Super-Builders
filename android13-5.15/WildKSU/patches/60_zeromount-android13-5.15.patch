@@ -184,14 +184,14 @@ diff -ruN a/fs/proc/task_mmu.c b/fs/proc/task_mmu.c
  #include <linux/susfs_def.h>
  #endif // #if defined(CONFIG_KSU_SUSFS_SUS_KSTAT) || defined(CONFIG_KSU_SUSFS_SUS_MAP) || defined(CONFIG_KSU_SUSFS_OPEN_REDIRECT)
 @@ -318,6 +321,9 @@
- #endif
+ #endif // #ifdef CONFIG_KSU_SUSFS_SUS_MAP
  		dev = inode->i_sb->s_dev;
  		ino = inode->i_ino;
 +#ifdef CONFIG_ZEROMOUNT
 +		zeromount_spoof_mmap_metadata(inode, &dev, &ino);
 +#endif
  #ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
- 		susfs_sus_kstat_spoof_show_map_vma(inode, &dev, &ino);
+ 	             	susfs_sus_kstat_spoof_show_map_vma(inode, &dev, &ino);
  #endif // #ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
 diff -ruN a/fs/readdir.c b/fs/readdir.c
 --- a/fs/readdir.c	2026-03-01 01:55:24.634434134 +0100
