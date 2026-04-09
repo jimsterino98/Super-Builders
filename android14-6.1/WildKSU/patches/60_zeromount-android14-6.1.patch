@@ -175,14 +175,14 @@
  #include <linux/susfs_def.h>
  #endif // #if defined(CONFIG_KSU_SUSFS_SUS_KSTAT) || defined(CONFIG_KSU_SUSFS_SUS_MAP) || defined(CONFIG_KSU_SUSFS_OPEN_REDIRECT)
 @@ -322,6 +325,9 @@
- #endif
+ #endif // #ifdef CONFIG_KSU_SUSFS_SUS_MAP
  		dev = inode->i_sb->s_dev;
  		ino = inode->i_ino;
 +#ifdef CONFIG_ZEROMOUNT
 +		zeromount_spoof_mmap_metadata(inode, &dev, &ino);
 +#endif
  #ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
- 		susfs_sus_kstat_spoof_show_map_vma(inode, &dev, &ino);
+ 		             susfs_sus_kstat_spoof_show_map_vma(inode, &dev, &ino);
  #endif // #ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
 --- a/fs/readdir.c	2026-03-01 03:03:02.085565855 +0100
 +++ b/fs/readdir.c	2026-03-01 03:09:26.984750991 +0100
