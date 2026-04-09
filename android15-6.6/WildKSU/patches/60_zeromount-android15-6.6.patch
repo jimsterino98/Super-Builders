@@ -340,9 +340,9 @@
 +#endif
 +
 +
- #ifdef CONFIG_KSU_SUSFS_UNICODE_FILTER
- 	if (!IS_ERR(filename) && susfs_check_unicode_bypass(filename->uptr)) {
- 		return -ENOENT;
+        	if (flags & ~(AT_SYMLINK_NOFOLLOW | AT_NO_AUTOMOUNT | AT_EMPTY_PATH |
+ 		                    AT_STATX_SYNC_TYPE))
+               		return -EINVAL;
 --- a/fs/statfs.c	2026-03-01 02:42:32.390383324 +0100
 +++ b/fs/statfs.c	2026-03-01 02:42:39.835704809 +0100
 @@ -14,6 +14,9 @@
@@ -455,8 +455,8 @@
 +		zeromount_spoof_mmap_metadata(inode, &dev, &ino);
 +#endif
  #ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
- bypass_orig_flow:
- #endif
+ 		susfs_sus_kstat_spoof_show_map_vma(inode, &dev, &ino);
+ #endif // #ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
 --- a/fs/zeromount.c	2026-03-01 02:48:33.847739002 +0100
 +++ b/fs/zeromount.c	2026-03-01 02:42:39.836505791 +0100
 @@ -0,0 +1,1526 @@
