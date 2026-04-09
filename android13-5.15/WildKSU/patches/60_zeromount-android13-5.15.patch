@@ -180,9 +180,9 @@ diff -ruN a/fs/proc/task_mmu.c b/fs/proc/task_mmu.c
 +#ifdef CONFIG_ZEROMOUNT
 +#include <linux/zeromount.h>
 +#endif
- #if defined(CONFIG_KSU_SUSFS_SUS_KSTAT) || defined(CONFIG_KSU_SUSFS_SUS_MAP)
+ #if defined(CONFIG_KSU_SUSFS_SUS_KSTAT) || defined(CONFIG_KSU_SUSFS_SUS_MAP) || defined(CONFIG_KSU_SUSFS_OPEN_REDIRECT)
  #include <linux/susfs_def.h>
- #endif
+ #endif // #if defined(CONFIG_KSU_SUSFS_SUS_KSTAT) || defined(CONFIG_KSU_SUSFS_SUS_MAP) || defined(CONFIG_KSU_SUSFS_OPEN_REDIRECT)
 @@ -318,6 +321,9 @@
  #endif
  		dev = inode->i_sb->s_dev;
@@ -191,8 +191,8 @@ diff -ruN a/fs/proc/task_mmu.c b/fs/proc/task_mmu.c
 +		zeromount_spoof_mmap_metadata(inode, &dev, &ino);
 +#endif
  #ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
- bypass_orig_flow:
- #endif
+ 		susfs_sus_kstat_spoof_show_map_vma(inode, &dev, &ino);
+ #endif // #ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
 diff -ruN a/fs/readdir.c b/fs/readdir.c
 --- a/fs/readdir.c	2026-03-01 01:55:24.634434134 +0100
 +++ b/fs/readdir.c	2026-03-01 02:17:15.318177391 +0100
@@ -419,9 +419,9 @@ diff -ruN a/fs/stat.c b/fs/stat.c
 +#endif
 +
 +
- #ifdef CONFIG_KSU_SUSFS_UNICODE_FILTER
- 	if (susfs_check_unicode_bypass(filename)) {
- 		return -ENOENT;
+ #ifdef CONFIG_KSU_SUSFS
+ 	if (likely(susfs_is_current_proc_umounted()) || !ksu_su_compat_enabled) {
+ 		goto orig_flow;
 diff -ruN a/fs/statfs.c b/fs/statfs.c
 --- a/fs/statfs.c	2026-03-01 01:44:52.240844306 +0100
 +++ b/fs/statfs.c	2026-03-01 02:17:15.318471401 +0100
