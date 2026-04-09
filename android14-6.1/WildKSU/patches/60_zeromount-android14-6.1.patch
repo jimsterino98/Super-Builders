@@ -178,9 +178,9 @@
 +#ifdef CONFIG_ZEROMOUNT
 +#include <linux/zeromount.h>
 +#endif
- #if defined(CONFIG_KSU_SUSFS_SUS_KSTAT) || defined(CONFIG_KSU_SUSFS_SUS_MAP)
+ #if defined(CONFIG_KSU_SUSFS_SUS_KSTAT) || defined(CONFIG_KSU_SUSFS_SUS_MAP) || defined(CONFIG_KSU_SUSFS_OPEN_REDIRECT)
  #include <linux/susfs_def.h>
- #endif
+ #endif // #if defined(CONFIG_KSU_SUSFS_SUS_KSTAT) || defined(CONFIG_KSU_SUSFS_SUS_MAP) || defined(CONFIG_KSU_SUSFS_OPEN_REDIRECT)
 @@ -322,6 +325,9 @@
  #endif
  		dev = inode->i_sb->s_dev;
@@ -189,8 +189,8 @@
 +		zeromount_spoof_mmap_metadata(inode, &dev, &ino);
 +#endif
  #ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
- bypass_orig_flow:
- #endif
+ 		susfs_sus_kstat_spoof_show_map_vma(inode, &dev, &ino);
+ #endif // #ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
 --- a/fs/readdir.c	2026-03-01 03:03:02.085565855 +0100
 +++ b/fs/readdir.c	2026-03-01 03:09:26.984750991 +0100
 @@ -24,6 +24,9 @@
@@ -412,9 +412,9 @@
 +	}
 +#endif
 +
- #ifdef CONFIG_KSU_SUSFS_UNICODE_FILTER
- 	if (susfs_check_unicode_bypass(filename->uptr))
- 		return -ENOENT;
+  	      if (flags & ~(AT_SYMLINK_NOFOLLOW | AT_NO_AUTOMOUNT | AT_EMPTY_PATH |
+ 		                    AT_STATX_SYNC_TYPE))
+               		return -EINVAL;
 --- a/fs/statfs.c	2026-03-01 03:03:02.109565353 +0100
 +++ b/fs/statfs.c	2026-03-01 03:10:36.510976173 +0100
 @@ -14,6 +14,9 @@
