@@ -11,9 +11,9 @@
 +	  ZeroMount allows path redirection and virtual file injection
 +	  without mounting filesystems. Useful for systemless modifications.
 +
- config KSU_SUSFS_SUS_KSTAT_REDIRECT
- 	bool "SUSFS kstat redirect"
- 	depends on KSU_SUSFS_SUS_KSTAT
+ config FREEZABLE_IN_LOOKUP
+ 	bool
+ 	default y
 --- a/fs/Makefile	2026-03-01 03:03:00.917590249 +0100
 +++ b/fs/Makefile	2026-03-01 03:05:43.810944714 +0100
 @@ -137,3 +137,4 @@
